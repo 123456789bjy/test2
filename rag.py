@@ -23,6 +23,7 @@ class RagService(object):
         self.vector_service = VectorStoreService(
             embedding=DashScopeEmbeddings(model=config.embedding_model_name)
         )
+        self._retriever = self.vector_service.get_retriever()
 
         self.prompt_template = ChatPromptTemplate.from_messages(
             [
@@ -35,12 +36,34 @@ class RagService(object):
         )
 
         self.chat_model = ChatTongyi(model=config.chat_model_name)
-
         self.chain = self.__get_chain()
+
+    def retrieve_documents(self, query: str) -> list[Document]:
+        """与对话链使用同一检索器，便于展示「回答依据」。"""
+        return self._retriever.invoke(query)
+
+    @staticmethod
+    def format_answer_basis(docs: list[Document]) -> str:
+        if not docs:
+            return (
+                "本次检索未命中知识库中的相关片段，回答主要依据模型常识与对话历史；"
+                "建议人工重点核查事实准确性。"
+            )
+        parts: list[str] = []
+        for i, doc in enumerate(docs, 1):
+            src = doc.metadata.get("source", "未知来源")
+            snippet = (doc.page_content or "").strip().replace("\n", " ")
+            if len(snippet) > 240:
+                snippet = snippet[:240] + "…"
+            parts.append(f"{i}. **来源**：{src}\n   **片段**：{snippet}")
+        return "\n\n".join(parts)
+        self.chain = self.__get_chain()
+
 
     def __get_chain(self):
         """获取最终的执行链"""
-        retriever = self.vector_service.get_retriever()
+        
+        retriever = self._retriever
 
         def format_document(docs: list[Document]):
             if not docs:

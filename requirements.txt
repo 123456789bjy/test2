@@ -1,0 +1,7 @@
+streamlit
+langchain-core
+langchain-community
+langchain-chroma
+langchain-text-splitters
+chromadb
+redis>=4.5.0
