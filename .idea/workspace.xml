@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="c760e21e-0583-482c-9e73-438f18a3ae2f" name="更改" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/RAG.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/保养知识.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/其他补充.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/场合搭配.txt" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/data/流行单品.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app_file_uploader.py" beforeDir="false" afterPath="$PROJECT_DIR$/app_file_uploader.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/app_qa.py" beforeDir="false" afterPath="$PROJECT_DIR$/app_qa.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chat_history/user_001" beforeDir="false" afterPath="$PROJECT_DIR$/chat_history/user_001" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chroma_db/eeb78204-de20-46fd-8e31-e70ea9c6cd67/data_level0.bin" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/eeb78204-de20-46fd-8e31-e70ea9c6cd67/data_level0.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/chroma_db/eeb78204-de20-46fd-8e31-e70ea9c6cd67/length.bin" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/eeb78204-de20-46fd-8e31-e70ea9c6cd67/length.bin" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/config_data.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/review_tasks.json" beforeDir="false" afterPath="$PROJECT_DIR$/data/review.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/尺码推荐.txt" beforeDir="false" afterPath="$PROJECT_DIR$/data/尺码推荐.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/data/颜色选择.txt" beforeDir="false" afterPath="$PROJECT_DIR$/data/颜色搭配.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/md5.text" beforeDir="false" afterPath="$PROJECT_DIR$/md5.text" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/rag.py" beforeDir="false" afterPath="$PROJECT_DIR$/rag.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/review.py" beforeDir="false" afterPath="$PROJECT_DIR$/review.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="HighlightingSettingsPerFile">
+    <setting file="file://$PROJECT_DIR$/app_qa.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/data/尺码推荐.txt" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/rag.py" root0="SKIP_INSPECTION" />
+    <setting file="file://$PROJECT_DIR$/review.py" root0="SKIP_INSPECTION" />
+  </component>
+  <component name="ProjectId" id="3CIYTSJzRs6KaN86hMyNHhI9MoR" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ASKED_ADD_EXTERNAL_FILES": "true",
+    "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "WebServerToolWindowFactoryState": "false",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "D:/桌面/RAG",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="应用程序级" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="默认任务">
+      <changelist id="c760e21e-0583-482c-9e73-438f18a3ae2f" name="更改" comment="" />
+      <created>1776074558342</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1776074558342</updated>
+      <workItem from="1776074559428" duration="9505000" />
+      <workItem from="1776128247143" duration="11317000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
+  </component>
+</project>

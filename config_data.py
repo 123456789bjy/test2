@@ -26,10 +26,10 @@ session_config = {
     }
 # 人工复核任务："json"=本地 JSON，无需 Redis；"redis"=需本机启动 Redis
 review_tasks_backend = "json"
-review_tasks_path = "./data/review_tasks.json"
+review_path = "./data/review.json"
 
-redis_host = "127.0.0.1"
-redis_port = 6379
-redis_db = 0
-redis_password = None
-review_tasks_redis_prefix = "review"
+# redis_host = "127.0.0.1"
+# redis_port = 6379
+# redis_db = 0
+# redis_password = None
+# review_tasks_redis_prefix = "review"

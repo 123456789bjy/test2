@@ -1,126 +1,55 @@
-"""
-待审核任务存储：
-- redis：Hash 存任务体；Sorted Set 按时间排序 / 区分 pending；List 作待复核消息队列（LPUSH，供 BRPOP 消费）。
-- json：本地 JSON 文件（无 Redis 时将 review_tasks_backend 设为 "json"）。
-"""
-from __future__ import annotations
-
 import json
 import os
-import time
-import uuid
-from datetime import datetime
-from typing import Any
+import uuid# 用于生成唯一的任务 ID（不会重复）
+from datetime import datetime# 用于生成当前时间（创建时间、审核时间）
+from typing import Any# 类型标注：任意类型
 
+
+# 导入项目配置文件（读取 JSON 文件保存路径）
 import config_data as config
 
-_DEFAULT_PATH = config.review_tasks_path
-_BACKEND = getattr(config, "review_tasks_backend", "redis").lower()
-_PREFIX = getattr(config, "review_tasks_redis_prefix", "review")
 
-_redis_client = None
+# 从配置文件读取：待审核任务默认保存的 JSON 文件路径
+store = config.review_path
 
 
-def _get_redis():
-    global _redis_client
-    if _redis_client is not None:
-        return _redis_client
-    import redis
-
-    pw = getattr(config, "redis_password", None)
-    _redis_client = redis.Redis(
-        host=getattr(config, "redis_host", "127.0.0.1"),
-        port=int(getattr(config, "redis_port", 6379)),
-        db=int(getattr(config, "redis_db", 0)),
-        password=pw if pw else None,
-        decode_responses=True,
-    )
-    return _redis_client
-
-
-def _k_task(task_id: str) -> str:
-    return f"{_PREFIX}:task:{task_id}"
-
-
-def _k_z_all() -> str:
-    return f"{_PREFIX}:z:all"
-
-
-def _k_z_pending() -> str:
-    return f"{_PREFIX}:z:pending"
-
-
-def _k_mq_pending() -> str:
-    return f"{_PREFIX}:mq:pending"
-
-
-def _task_to_hash_row(d: dict[str, Any]) -> dict[str, str]:
-    out: dict[str, str] = {}
-    for k, v in d.items():
-        if v is None:
-            out[k] = ""
-        else:
-            out[k] = str(v)
-    return out
-
-
-def _hash_to_task(h: dict[str, str]) -> dict[str, Any]:
-    t: dict[str, Any] = dict(h)
-    if t.get("reviewed_at") == "":
-        t["reviewed_at"] = None
-    return t
-
-
-# --- JSON backend ---
-
-
-def _ensure_path(path: str) -> None:
+def exist(path: str) -> None:#判断文件夹是否存在
     d = os.path.dirname(os.path.abspath(path))
-    if d:
-        os.makedirs(d, exist_ok=True)
+    if d:    # 如果目录不为空
+        os.makedirs(d, exist_ok=True) # 创建目录，exist_ok=True 表示目录已存在也不会报错
 
-
-def _load_all(path: str | None = None) -> list[dict[str, Any]]:
-    path = path or _DEFAULT_PATH
-    if not os.path.exists(path):
+def load(path: str | None = None) -> list[dict[str, Any]]:#从JSON文件中读取数据 list里面套字典dict
+    path = path or store# 如果没传 path，就使用默认路径
+    if not os.path.exists(path):# 如果文件不存在，直接返回空列表
         return []
     with open(path, "r", encoding="utf-8") as f:
-        data = json.load(f)
-    return data if isinstance(data, list) else []
+        data = json.load(f)# 把JSON转成list/dict
+    return data if isinstance(data, list) else []    # 如果读取出来的是列表(本身JSON是列表套字典)，就返回；否则返回空列表
 
 
-def _save_all(rows: list[dict[str, Any]], path: str | None = None) -> None:
-    path = path or _DEFAULT_PATH
-    _ensure_path(path)
+def save(data: list[dict[str, Any]], path: str | None = None) -> None:# 将所有任务存到JSON
+    path = path or store
+    exist(path)#判断是否存在
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(rows, f, ensure_ascii=False, indent=2)
+        json.dump(data, f, ensure_ascii=False, indent=2)#将列表存入JSON，rows存入f
 
-
-def append_pending_task(
+def addtask(#添加待审核任务
     *,
-    session_id: str,
-    question: str,
-    answer: str,
-    basis: str,
-    path: str | None = None,
+    session_id: str,        # ID
+    question: str,          # 问题
+    answer: str,            # 回答
+    basis: str,             # 依据
+    path: str | None = None,# 路径
 ) -> str:
-    if _BACKEND == "json":
-        return _append_pending_task_json(
-            session_id=session_id,
-            question=question,
-            answer=answer,
-            basis=basis,
-            path=path,
-        )
-    return _append_pending_task_redis(
+    return addtask_json(    #直接调用JSON添加实现
         session_id=session_id,
         question=question,
         answer=answer,
         basis=basis,
+        path=path,
     )
 
-
-def _append_pending_task_json(
+def addtask_json(#往JSON文件里添加一条新任务
     *,
     session_id: str,
     question: str,
@@ -128,170 +57,60 @@ def _append_pending_task_json(
     basis: str,
     path: str | None = None,
 ) -> str:
-    path = path or _DEFAULT_PATH
-    rows = _load_all(path)
-    task_id = str(uuid.uuid4())
-    rows.append(
+    path = path or store
+    data = load(path)
+    task_id = str(uuid.uuid4())#生成一个唯一id
+    data.append(    # 构造一条新的任务记录
         {
-            "task_id": task_id,
-            "created_at": datetime.now().isoformat(timespec="seconds"),
-            "session_id": session_id,
-            "question": question,
-            "answer": answer,
-            "basis": basis,
-            "status": "pending",
-            "reviewed_at": None,
-            "reviewer_note": "",
+            "task_id": task_id,               # ID
+            "created_at": datetime.now().isoformat(timespec="seconds"),  #时间
+            "session_id": session_id,         # 会话ID
+            "question": question,             # 问题
+            "answer": answer,                 # 回答
+            "basis": basis,                   # 依据
+            "status": "pending",              # 状态
+            "reviewed_at": None,              # 审核时间
+            "reviewer_note": "",              # 备注
         }
     )
-    _save_all(rows, path)
-    return task_id
+    save(data, path)# 把新列表写回文件
+    return task_id  # 返回任务的ID
 
 
-def _append_pending_task_redis(
+def find(state: str | None = None, path: str | None = None) -> list[dict[str, Any]]:#查询返回任务列表
+    data = load(path)
+    if state: #如果传了审核状态(通过，驳回，待审核)，只返回对应状态的任务
+        return [r for r in data if r.get("status") == state]
+    return data    # 否则返回全部任务
+
+def update(#外层包装，对待审核任务的状态更新
+    task_id: str,            # 待审核ID
     *,
-    session_id: str,
-    question: str,
-    answer: str,
-    basis: str,
-) -> str:
-    r = _get_redis()
-    task_id = str(uuid.uuid4())
-    created_at = datetime.now().isoformat(timespec="seconds")
-    score = time.time()
-    row = {
-        "task_id": task_id,
-        "created_at": created_at,
-        "session_id": session_id,
-        "question": question,
-        "answer": answer,
-        "basis": basis,
-        "status": "pending",
-        "reviewed_at": "",
-        "reviewer_note": "",
-    }
-    pipe = r.pipeline()
-    pipe.hset(_k_task(task_id), mapping=_task_to_hash_row(row))
-    pipe.zadd(_k_z_all(), {task_id: score})
-    pipe.zadd(_k_z_pending(), {task_id: score})
-    mq_payload = json.dumps(
-        {"task_id": task_id, "created_at": created_at, "session_id": session_id, "kind": "pending_review"},
-        ensure_ascii=False,
+    status: str,             # 要审核状态状态：approved/rejected
+    reviewer_note: str = "", # 备注
+    path: str | None = None, # 路径
+) -> bool:
+    return update_json(
+        task_id=task_id,
+        status=status,
+        reviewer_note=reviewer_note,
+        path=path
     )
-    pipe.lpush(_k_mq_pending(), mq_payload)
-    pipe.execute()
-    return task_id
 
-
-def list_tasks(status: str | None = None, path: str | None = None) -> list[dict[str, Any]]:
-    if _BACKEND == "json":
-        rows = _load_all(path)
-        if status:
-            return [r for r in rows if r.get("status") == status]
-        return rows
-    return _list_tasks_redis(status)
-
-
-def _list_tasks_redis(status: str | None) -> list[dict[str, Any]]:
-    r = _get_redis()
-    if status == "pending":
-        ids = r.zrange(_k_z_pending(), 0, -1)
-    elif status is None:
-        ids = r.zrange(_k_z_all(), 0, -1)
-    else:
-        ids = r.zrange(_k_z_all(), 0, -1)
-        out: list[dict[str, Any]] = []
-        for tid in ids:
-            h = r.hgetall(_k_task(tid))
-            if not h:
-                continue
-            t = _hash_to_task(h)
-            if t.get("status") == status:
-                out.append(t)
-        return out
-
-    out = []
-    for tid in ids:
-        h = r.hgetall(_k_task(tid))
-        if h:
-            out.append(_hash_to_task(h))
-    return out
-
-
-def update_task(
+def update_json(# 第层真正执行，使用task_id 找到任务并修改状态、审核时间、备注
     task_id: str,
     *,
     status: str,
     reviewer_note: str = "",
     path: str | None = None,
 ) -> bool:
-    if _BACKEND == "json":
-        return _update_task_json(task_id, status=status, reviewer_note=reviewer_note, path=path)
-    return _update_task_redis(task_id, status=status, reviewer_note=reviewer_note)
-
-
-def _update_task_json(
-    task_id: str,
-    *,
-    status: str,
-    reviewer_note: str = "",
-    path: str | None = None,
-) -> bool:
-    path = path or _DEFAULT_PATH
-    rows = _load_all(path)
-    for row in rows:
-        if row.get("task_id") == task_id:
-            row["status"] = status
-            row["reviewed_at"] = datetime.now().isoformat(timespec="seconds")
-            row["reviewer_note"] = reviewer_note
-            _save_all(rows, path)
-            return True
-    return False
-
-
-def _update_task_redis(task_id: str, *, status: str, reviewer_note: str = "") -> bool:
-    r = _get_redis()
-    key = _k_task(task_id)
-    if not r.exists(key):
-        return False
-    reviewed_at = datetime.now().isoformat(timespec="seconds")
-    r.hset(
-        key,
-        mapping={
-            "status": status,
-            "reviewed_at": reviewed_at,
-            "reviewer_note": reviewer_note or "",
-        },
-    )
-    r.zrem(_k_z_pending(), task_id)
-    return True
-
-
-def store_diagnostics() -> dict[str, Any]:
-    """供界面展示：存储后端类型、Redis 是否连通。"""
-    out: dict[str, Any] = {"backend": _BACKEND, "redis_ok": None, "redis_error": None}
-    if _BACKEND != "redis":
-        return out
-    try:
-        r = _get_redis()
-        r.ping()
-        out["redis_ok"] = True
-    except Exception as e:
-        out["redis_ok"] = False
-        out["redis_error"] = str(e)
-    return out
-
-
-def brpop_pending_queue(timeout: int = 0) -> dict[str, Any] | None:
-    """
-    阻塞式从待复核消息队列取一条（与 append 时 LPUSH 对应，使用 BRPOP）。
-    timeout：0 表示一直阻塞；正整数为秒。供独立复核消费者进程演示。
-    """
-    if _BACKEND != "redis":
-        return None
-    r = _get_redis()
-    out = r.brpop(_k_mq_pending(), timeout=timeout)
-    if not out:
-        return None
-    _, payload = out
-    return json.loads(payload)
+    path = path or store
+    data = load(path)
+    for d in data:    # 遍历所有任务，找到与task_id匹配的任务
+        if d.get("task_id") == task_id:
+            d["status"] = status #修改状态
+            d["reviewed_at"] = datetime.now().isoformat(timespec="seconds") #修改时间
+            d["reviewer_note"] = reviewer_note #备注
+            save(rows, path) #保存
+            return True  #修改成功
+    return False #没找到文件
