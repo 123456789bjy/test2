@@ -3,15 +3,8 @@ import os
 import uuid# 用于生成唯一的任务 ID（不会重复）
 from datetime import datetime# 用于生成当前时间（创建时间、审核时间）
 from typing import Any# 类型标注：任意类型
-
-
-# 导入项目配置文件（读取 JSON 文件保存路径）
-import config_data as config
-
-
-# 从配置文件读取：待审核任务默认保存的 JSON 文件路径
-store = config.review_path
-
+import config_data as config# 配置文件
+store = config.review_path# 从配置文件读取：待审核任务默认保存的 JSON 文件路径
 
 def exist(path: str) -> None:#判断文件夹是否存在
     d = os.path.dirname(os.path.abspath(path))
@@ -31,7 +24,7 @@ def save(data: list[dict[str, Any]], path: str | None = None) -> None:# 将所�
     path = path or store
     exist(path)#判断是否存在
     with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)#将列表存入JSON，rows存入f
+        json.dump(data, f, ensure_ascii=False, indent=2)#将列表套字典的数据存入JSON，data存入f
 
 def addtask(#添加待审核任务
     *,
@@ -97,7 +90,7 @@ def update(#外层包装，对待审核任务的状态更新
         path=path
     )
 
-def update_json(# 第层真正执行，使用task_id 找到任务并修改状态、审核时间、备注
+def update_json(# 真正执行，使用task_id 找到任务并修改状态、审核时间、备注
     task_id: str,
     *,
     status: str,

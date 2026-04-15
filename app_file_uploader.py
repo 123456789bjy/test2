@@ -5,11 +5,14 @@ pip install streamlit
 
 Streamlit：当WEB页面元素发生变化，则代码重新执行一遍
 """
+import csv
+import io
+import json
+import os
 import time
-
 import streamlit as st
 from knowledge_base import KnowledgeBaseService
-import time
+
 st.set_page_config(page_title="知识库更新", layout="centered")
 
 st.markdown(
@@ -144,25 +147,67 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
+type_list = ["txt", "md", "csv", "json", "pdf", "docx", "xlsx"]
+
+
+def else_to_txt(file) -> str:#将上传的文件内容转化为文本内容
+    last = os.path.splitext(file.name)[1].lower()#取后缀并统一转化为小写
+    bin = file.getvalue()#把上传的文件读成二进制数据
+
+    if last in {".txt", ".md"}:#文本直接返回
+        return bin.decode("utf-8")
+
+    if last == ".json":
+        j = json.loads(file_bytes.decode("utf-8"))
+        return json.dumps(j, ensure_ascii=False, indent=2)
+
+    if last == ".csv":
+        content = bin.decode("utf-8")#解码成文本
+        reader = csv.reader(io.StringIO(content))#按行读取表格
+        rows = ["\t".join(row) for row in reader]#每一行用制表符隔开，方便阅读
+        return "\n".join(rows)#返回纯文本格式的表格内容
+
+    if last == ".pdf":
+        from pypdf import PdfRead
+        reader = PdfReader(io.BytesIO(bin))#一页一页提取文字
+        pages = [page.extract_text() or "" for page in reader.pages]#把所有页拼接起来
+        return "\n".join(pages).strip()#返回纯文本
+
+    if last == ".docx":
+        from docx import Document
+        doc = Document(io.BytesIO(bin))#读取所有段落文字
+        return "\n".join(p.text for p in doc.paragraphs if p.text).strip()#过滤空行
+
+    if last == ".xlsx":
+        from openpyxl import load_workbook
+        workbook = load_workbook(io.BytesIO(bin), data_only=True)
+        all_rows = []
+        for sheet in workbook.worksheets:#遍历所有工作表
+            all_rows.append(f"### Sheet: {sheet.title}")
+            for row in sheet.iter_rows(values_only=True):#逐行读取单元格内容
+                row_values = ["" if v is None else str(v) for v in row]
+                all_rows.append("\t".join(row_values))#用制表符排版，变成纯文本表格
+        return "\n".join(all_rows).strip()
+
+    raise ValueError(f"暂不支持的文件类型：{suffix}")#都不匹配，抛出错误
+
+
 st.markdown(
     """
     <div class="kb-hero">
       <div class="kb-hero-title">知识库更新</div>
       <div class="kb-hero-sub">
-        上传 <code>.txt</code> 并写入向量库（Chroma）。推荐用“新增文件名”的方式追加知识，避免新旧内容混杂。
+        上传多种格式文件。支持 <code>.txt / .md / .csv / .json / .pdf / .docx / .xlsx</code>。
       </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-import streamlit as st
-import time
-
 # 文件上传（支持多选）
-uploader_files = st.file_uploader(
+files = st.file_uploader(
     "请选择一个或多个知识文件",
-    type=["txt"],
+    type=type_list,
     accept_multiple_files=True
 )
 
@@ -171,40 +216,35 @@ if "service" not in st.session_state:
     st.session_state["service"] = KnowledgeBaseService()
 
 # 处理多文件上传
-if uploader_files:
-    # 👇 这里就是 total 的来源
-    total = len(uploader_files)
-
-    st.success(f"✅ 已选择 {total} 个文件，开始加载知识库...")
-
-    # 逐个处理文件
-    for idx, file in enumerate(uploader_files, 1):
+if files:
+    total = len(files)
+    st.success(f"已选择 {total} 个文件，开始加载知识库...")
+    for idx, file in enumerate(files, 1):# 逐个处理文件
         with st.container():
             st.markdown("---")
-            st.markdown(f"#### 📄 正在处理第 {idx}/{total} 个文件")
-
+            st.markdown(f"####  正在处理第 {idx}/{total} 个文件")
             file_name = file.name
             file_size_kb = file.size / 1024
-
-            # 展示文件信息
-            st.info(f"**文件名**: {file_name}  |  **大小**: {file_size_kb:.2f} KB")
-
-            # 读取文本
-            text = file.getvalue().decode("utf-8")
-
-            # 加载动画
-            with st.spinner(f"正在载入 {file_name}..."):
+            st.info(f"**文件名**: {file_name}  |  **大小**: {file_size_kb:.2f} KB")# 展示文件信息
+            try:
+                text = else_to_txt(file)# 读取文件并提取文本
+            except Exception as e:
+                st.error(f" {file_name} 解析失败：{e}")
+                continue
+            if not text.strip():
+                st.warning(f"{file_name} 未提取到有效文本，跳过。")
+                continue
+            with st.spinner(f"正在载入 {file_name}..."):# 加载动画
                 time.sleep(0.8)
                 result = st.session_state["service"].upload_by_str(text, file_name)
 
-            # 成功提示
-            st.success(f"✅ **{file_name} 上传完成！**")
+            st.success(f"**{file_name} 上传完成**")# 成功提示
             with st.expander("查看解析详情", expanded=False):
                 st.write(result)
 
     st.markdown("---")
     st.balloons()
-    st.success("🎉 所有文件加载完毕！")
+    st.success("所有文件加载完毕")
 
 
 

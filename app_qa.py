@@ -67,9 +67,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 with st.sidebar:
-    st.markdown("### ⚙️ 助手设置")
-    show_basis_default = st.toggle("默认展开回答依据", value=True)
-    st.markdown("---")
     st.markdown("### 🧭 使用说明")
     st.caption("1. 在下方输入问题\n2. 查看回答和检索依据\n3. 审核页进行人工复核")
 st.markdown('<p class="small-tip">示例问题：羽绒服怎么洗？羊毛大衣起球怎么办？</p>', unsafe_allow_html=True)
@@ -83,7 +80,7 @@ if "rag" not in st.session_state:
 tab_chat, tab_review = st.tabs(["智能问答", "待审核队列"])
 
 with tab_chat:#后续的内容挂在只能回答下面
-    for message in st.session_state["message"]:
+    for message in st.session_state["message"]:#显示所有的聊天记录
         with st.chat_message(message["role"]):
             if message["role"] == "assistant" and message.get("basis"):
                 with st.expander("点击展开查看全部回答依据", expanded=False):
@@ -97,8 +94,7 @@ with tab_chat:#后续的内容挂在只能回答下面
         st.session_state["message"].append({"role": "user", "content": prompt})
         #讲用户的输入存入到状态中
         docs = st.session_state["rag"].retrieve_documents(prompt)#调用 RAG 服务的文档检索方法，根据用户问题从向量库中匹配相关文档；
-        basis_text = RagService.format_answer_basis(docs)
-        #将检索到的文档列表格式化为容易读的形式，针对可解释来编写，检索出来的结果放在basis_txt
+        basis_text = RagService.format_answer_basis(docs)#将检索到的文档列表格式化为容易读的形式，针对可解释来编写，检索出来的结果放在basis_txt
         ai_res_list: list[str] = []#缓存 AI 流式返回的文本片段，最终拼接为完整回答；
         with st.chat_message("assistant"):
             with st.expander("检索依据", expanded=False):
@@ -107,19 +103,15 @@ with tab_chat:#后续的内容挂在只能回答下面
                 res_stream = st.session_state["rag"].chain.stream(
                     {"input": prompt}, config.session_config
                 )#调用 RAG 链的流式生成方法，返回逐段的生成结果
-
-                def capture(gen, cache_list: list[str]):
+                def capture(gen, cache_list: list[str]):#封装生成器，在返回每段文本的同时，将文本片段追加到 ai_res_list 缓存；
                     for chunk in gen:
                         cache_list.append(chunk)
                         yield chunk
-                #封装生成器，在返回每段文本的同时，将文本片段追加到 ai_res_list 缓存；
-                st.write_stream(capture(res_stream, ai_res_list))
-                #流式渲染 AI 的回答，实现「打字机」效果，提升用户体验。
-        full_answer = "".join(ai_res_list)
+                st.write_stream(capture(res_stream, ai_res_list))#流式回答
+        full_answer = "".join(ai_res_list)#拼接形成完整的回答
         st.session_state["message"].append(
             {"role": "assistant", "content": full_answer, "basis": basis_text}
-        )
-        #拼接流式返回的文本片段，得到完整回答 并将机器人的回答（含检索的依据）追加到历史对话，确保刷新页面后仍能展示依据。
+        )#拼接流式返回的文本片段，得到完整回答 并将机器人的回答和依据追加到历史对话，确保刷新页面后仍能展示依据。
         session_id = config.session_config.get("configurable", {}).get("session_id", "default")
         try:
             addtask(#将本次问答记录（问题、回答、依据、会话 ID）写入待审核队列；
@@ -130,7 +122,7 @@ with tab_chat:#后续的内容挂在只能回答下面
             )
         except Exception as error:
             st.error(f"写入待审核队列失败：{error}")
-
+        st.rerun()
 with tab_review:# 人工复核界面
     st.subheader("待人工复核任务")
     st.caption("以下为用户的问答记录，请核对内容和对应答案是否匹配。")
